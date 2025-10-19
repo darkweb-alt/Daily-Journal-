@@ -1,0 +1,5 @@
+{
+  "name": "Daily Journal",
+  "description": "A discreet, private, offline-first habit tracker to help you build and maintain a single important habit. Visualize your progress with streak counts and a historical chart.",
+  "requestFramePermissions": []
+}
