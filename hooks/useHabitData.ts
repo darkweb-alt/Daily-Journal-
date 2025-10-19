@@ -55,6 +55,43 @@ export const useHabitData = () => {
         }
     }, []);
 
+    const importData = useCallback((jsonString: string) => {
+        try {
+            const data = JSON.parse(jsonString);
+
+            if (!data || !Array.isArray(data.entries) || typeof data.streakGoal === 'undefined') {
+                alert('Invalid backup file format.');
+                return;
+            }
+
+            const confirmImport = window.confirm(
+                'Are you sure you want to import this data? This will overwrite existing entries for the same dates and update your streak goal. This action cannot be undone.'
+            );
+
+            if (confirmImport) {
+                const importedEntries: HabitEntry[] = data.entries;
+                const importedStreakGoal: number = data.streakGoal;
+
+                const entriesMap = new Map(entries.map(e => [e.date, e]));
+                for (const entry of importedEntries) {
+                    if (entry.date && entry.status) {
+                       entriesMap.set(entry.date, entry);
+                    }
+                }
+                
+                const newEntries = Array.from(entriesMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+                setEntries(newEntries);
+                setStreakGoal(importedStreakGoal);
+                alert('Data imported successfully!');
+            }
+        } catch (error) {
+            console.error("Failed to import data", error);
+            alert('Failed to import data. The file might be corrupted or in the wrong format.');
+        }
+    }, [entries, setStreakGoal]);
+
+
     const { currentStreak, longestStreak, streakHistory, isGoalMet } = useMemo(() => {
         const sortedEntries = [...entries].sort((a, b) => b.date.localeCompare(a.date));
         const entriesMap = new Map<string, HabitStatus>(sortedEntries.map(e => [e.date, e.status]));
@@ -121,5 +158,5 @@ export const useHabitData = () => {
         };
     }, [entries, streakGoal]);
 
-    return { entries, addEntry, currentStreak, longestStreak, streakHistory, streakGoal, setStreakGoal, isGoalMet };
+    return { entries, addEntry, currentStreak, longestStreak, streakHistory, streakGoal, setStreakGoal, isGoalMet, importData };
 };

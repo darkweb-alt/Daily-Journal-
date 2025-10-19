@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Brush } from 'recharts';
 import { HabitEntry, Streak } from '../types';
 
 interface HistoryViewProps {
   entries: HabitEntry[];
   streakHistory: Streak[];
+  streakGoal: number;
+  importData: (jsonString: string) => void;
 }
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -21,37 +23,9 @@ const CustomTooltip = ({ active, payload }: any) => {
     return null;
 };
 
-const downloadCSV = (data: any[], filename: string) => {
-    if (data.length === 0) {
-        return;
-    }
+export const HistoryView: React.FC<HistoryViewProps> = ({ entries, streakHistory, streakGoal, importData }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const headers = Object.keys(data[0]);
-    const csvRows = [headers.join(',')];
-
-    for (const row of data) {
-        const values = headers.map(header => {
-            const escaped = ('' + row[header]).replace(/"/g, '""'); // escape double quotes
-            return `"${escaped}"`; // wrap in double quotes
-        });
-        csvRows.push(values.join(','));
-    }
-
-    const csvString = csvRows.join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-};
-
-
-export const HistoryView: React.FC<HistoryViewProps> = ({ entries, streakHistory }) => {
   const chartData = streakHistory.map(streak => {
     const endDate = new Date(streak.endDate);
     const startDate = new Date(endDate);
@@ -68,30 +42,55 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ entries, streakHistory
   const reversedEntries = [...entries].reverse();
 
   const handleExport = () => {
-    if (entries.length > 0) {
-        const entryExportData = entries.map(({ date, status, notes }) => ({
-            date,
-            status,
-            notes: notes || '',
-        }));
-        downloadCSV(entryExportData, 'habit_entries.csv');
+    if (entries.length === 0 && streakGoal === 0) {
+        alert("No data to export.");
+        return;
     }
 
-    if (streakHistory.length > 0) {
-        const streakExportData = streakHistory.map(streak => {
-            const endDate = new Date(streak.endDate);
-            const startDate = new Date(endDate);
-            startDate.setDate(endDate.getDate() - (streak.length - 1));
-            return {
-                start_date: startDate.toISOString().split('T')[0],
-                end_date: streak.endDate,
-                length_in_days: streak.length,
-            };
-        });
-        downloadCSV(streakExportData, 'habit_streaks.csv');
-    }
+    const dataToExport = {
+        entries,
+        streakGoal,
+    };
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const dateStamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `streak_tracker_backup_${dateStamp}.json`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target?.result;
+        if (typeof text === 'string') {
+            importData(text);
+        }
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+    reader.onerror = () => {
+        alert('Error reading file.');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+    reader.readAsText(file);
+  };
 
   return (
     <div className="bg-slate-800 rounded-xl p-6 shadow-lg animate-fade-in">
@@ -117,19 +116,40 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ entries, streakHistory
         )}
       </div>
 
-      <div>
-        <div className="flex justify-between items-center mb-2">
-            <h4 className="text-lg font-semibold text-slate-300">All Entries</h4>
-            <button
-                onClick={handleExport}
-                disabled={entries.length === 0}
-                className="px-3 py-1 text-sm bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 transition-colors duration-200 disabled:bg-slate-600 disabled:cursor-not-allowed"
-                aria-label="Export all data to CSV files"
-            >
-                Export Data
-            </button>
+      <div className="mb-8">
+        <div className="flex justify-between items-center">
+            <h4 className="text-lg font-semibold text-slate-300">Data Management</h4>
+            <div className="flex gap-2">
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="application/json"
+                    className="hidden"
+                    aria-hidden="true"
+                />
+                <button
+                    onClick={handleImportClick}
+                    className="px-3 py-1 text-sm bg-slate-600 text-white font-semibold rounded-md hover:bg-slate-700 transition-colors duration-200"
+                    aria-label="Import data from a backup file"
+                >
+                    Import
+                </button>
+                <button
+                    onClick={handleExport}
+                    className="px-3 py-1 text-sm bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 transition-colors duration-200"
+                    aria-label="Export all data to a JSON backup file"
+                >
+                    Export
+                </button>
+            </div>
         </div>
-        <div className="max-h-80 overflow-y-auto pr-2">
+        <p className="text-sm text-slate-400 mt-2">Save a backup file or import data from another device.</p>
+      </div>
+
+      <div>
+        <h4 className="text-lg font-semibold text-slate-300 mb-2">All Entries</h4>
+        <div className="max-h-60 overflow-y-auto pr-2 border-t border-slate-700 pt-4">
           {reversedEntries.length > 0 ? (
             <ul className="space-y-3">
               {reversedEntries.map(entry => (

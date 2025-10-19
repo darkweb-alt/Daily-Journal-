@@ -9,7 +9,7 @@ import { HabitEntry } from './types';
 type View = 'log' | 'history';
 
 const App: React.FC = () => {
-  const { entries, addEntry, currentStreak, longestStreak, streakHistory, streakGoal, setStreakGoal, isGoalMet } = useHabitData();
+  const { entries, addEntry, currentStreak, longestStreak, streakHistory, streakGoal, setStreakGoal, isGoalMet, importData } = useHabitData();
   const [view, setView] = useState<View>('log');
 
   const handleAddEntry = (newEntry: Omit<HabitEntry, 'date'> & { date: Date }) => {
@@ -54,13 +54,17 @@ const App: React.FC = () => {
             {view === 'log' ? (
               <LogForm addEntry={handleAddEntry} existingDates={entries.map(e => e.date)} />
             ) : (
-              <HistoryView entries={entries} streakHistory={streakHistory} />
+              <HistoryView 
+                entries={entries} 
+                streakHistory={streakHistory}
+                streakGoal={streakGoal}
+                importData={importData}
+              />
             )}
           </div>
         </main>
          <footer className="text-center text-slate-500 text-xs mt-10 pb-4">
-            <p>All data is stored locally on your device.</p>
-            <p>This is a web app. For an app-like experience, use "Add to Home Screen" in your browser.</p>
+            <p>App Developer: Pitambar Yadav</p>
         </footer>
       </div>
     </div>
