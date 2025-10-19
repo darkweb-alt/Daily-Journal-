@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { HabitStatus, HabitEntry } from '../types';
 
@@ -28,7 +27,7 @@ export const LogForm: React.FC<LogFormProps> = ({ addEntry, existingDates }) => 
 
   return (
     <div className="bg-slate-800 rounded-xl p-6 shadow-lg animate-fade-in">
-      <h3 className="text-xl font-semibold mb-4 text-center text-slate-200">Log Daily Progress</h3>
+      <h3 className="text-xl font-semibold mb-4 text-center text-slate-200">Log Today's Activity</h3>
       <div className="space-y-4">
         <div>
           <label htmlFor="date" className="block text-sm font-medium text-slate-400 mb-1">Date</label>
@@ -42,13 +41,13 @@ export const LogForm: React.FC<LogFormProps> = ({ addEntry, existingDates }) => 
           />
         </div>
         <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-slate-400 mb-1">Notes (Optional)</label>
+          <label htmlFor="notes" className="block text-sm font-medium text-slate-400 mb-1">Reason / Notes (Optional)</label>
           <textarea
             id="notes"
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any reflections for today?"
+            placeholder="If you missed, what was the trigger? Any other reflections?"
             className="w-full bg-slate-700 border-slate-600 text-slate-200 rounded-md p-2 focus:ring-emerald-500 focus:border-emerald-500"
           />
         </div>
@@ -59,14 +58,14 @@ export const LogForm: React.FC<LogFormProps> = ({ addEntry, existingDates }) => 
           disabled={isDateDisabled(selectedDateStr)}
           className="w-full flex items-center justify-center bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-emerald-700 transition-colors duration-200 disabled:bg-slate-600 disabled:cursor-not-allowed"
         >
-          <span className="text-2xl mr-2">✓</span> Completed
+          <span className="text-2xl mr-2">✓</span> Kept Streak
         </button>
         <button
           onClick={() => handleSubmit('missed')}
           disabled={isDateDisabled(selectedDateStr)}
           className="w-full flex items-center justify-center bg-rose-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-rose-700 transition-colors duration-200 disabled:bg-slate-600 disabled:cursor-not-allowed"
         >
-          <span className="text-2xl mr-2">✕</span> Missed
+          <span className="text-2xl mr-2">✕</span> Relapsed
         </button>
       </div>
       {isDateDisabled(selectedDateStr) && <p className="text-center text-yellow-400 text-sm mt-4">You have already logged an entry for this date.</p>}

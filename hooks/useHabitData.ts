@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { HabitEntry, HabitStatus, Streak } from '../types';
 
 const STORAGE_KEY = 'dailyJournalHabitData';
+const GOAL_STORAGE_KEY = 'dailyJournalStreakGoal';
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
@@ -23,6 +23,16 @@ export const useHabitData = () => {
         }
     });
 
+    const [streakGoal, setStreakGoalState] = useState<number>(() => {
+        try {
+            const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
+            return savedGoal ? JSON.parse(savedGoal) : 0;
+        } catch (error) {
+            console.error("Error reading goal from localStorage", error);
+            return 0;
+        }
+    });
+
     useEffect(() => {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
@@ -34,8 +44,18 @@ export const useHabitData = () => {
     const addEntry = useCallback((newEntry: HabitEntry) => {
         setEntries(prevEntries => [...prevEntries, newEntry].sort((a, b) => a.date.localeCompare(b.date)));
     }, []);
+    
+    const setStreakGoal = useCallback((goal: number) => {
+        try {
+            const newGoal = Math.max(0, Math.floor(goal));
+            localStorage.setItem(GOAL_STORAGE_KEY, JSON.stringify(newGoal));
+            setStreakGoalState(newGoal);
+        } catch (error) {
+            console.error("Error writing goal to localStorage", error);
+        }
+    }, []);
 
-    const { currentStreak, longestStreak, streakHistory } = useMemo(() => {
+    const { currentStreak, longestStreak, streakHistory, isGoalMet } = useMemo(() => {
         const sortedEntries = [...entries].sort((a, b) => b.date.localeCompare(a.date));
         const entriesMap = new Map<string, HabitStatus>(sortedEntries.map(e => [e.date, e.status]));
 
@@ -91,12 +111,15 @@ export const useHabitData = () => {
             checkDate = getPreviousDateString(checkDate);
         }
         
+        const isGoalMet = streakGoal > 0 && current >= streakGoal;
+
         return {
             currentStreak: current,
             longestStreak: longest,
             streakHistory: allStreaks,
+            isGoalMet
         };
-    }, [entries]);
+    }, [entries, streakGoal]);
 
-    return { entries, addEntry, currentStreak, longestStreak, streakHistory };
+    return { entries, addEntry, currentStreak, longestStreak, streakHistory, streakGoal, setStreakGoal, isGoalMet };
 };

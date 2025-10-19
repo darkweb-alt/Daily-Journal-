@@ -1,9 +1,11 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface StreakDisplayProps {
   currentStreak: number;
   longestStreak: number;
+  streakGoal: number;
+  setStreakGoal: (goal: number) => void;
+  isGoalMet: boolean;
 }
 
 const FireIcon = () => (
@@ -27,25 +29,100 @@ const TrophyIcon = () => (
 );
 
 
-export const StreakDisplay: React.FC<StreakDisplayProps> = ({ currentStreak, longestStreak }) => {
+export const StreakDisplay: React.FC<StreakDisplayProps> = ({ currentStreak, longestStreak, streakGoal, setStreakGoal, isGoalMet }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [goalValue, setGoalValue] = useState(streakGoal || '');
+
+  useEffect(() => {
+    setGoalValue(streakGoal || '');
+  }, [streakGoal]);
+
+  const handleSave = () => {
+    const newGoal = Math.max(0, Math.floor(Number(goalValue)));
+    setStreakGoal(newGoal);
+    setIsEditing(false);
+  };
+  
+  const handleCancel = () => {
+    setGoalValue(streakGoal || '');
+    setIsEditing(false);
+  }
+  
+  const progress = streakGoal > 0 ? Math.min((currentStreak / streakGoal) * 100, 100) : 0;
+  
   return (
-    <div className="grid grid-cols-2 gap-4 text-center">
-      <div className="bg-slate-800 rounded-xl p-4 shadow-lg flex flex-col items-center justify-center">
-        <div className="flex items-center">
-          <FireIcon />
-          <h2 className="text-lg font-semibold text-slate-300">Current Streak</h2>
+    <>
+      <div className="grid grid-cols-2 gap-4 text-center">
+        <div className="bg-slate-800 rounded-xl p-4 shadow-lg flex flex-col items-center justify-center">
+          <div className="flex items-center">
+            <FireIcon />
+            <h2 className="text-lg font-semibold text-slate-300">Current Streak</h2>
+          </div>
+          <p className="text-5xl font-bold text-orange-400 mt-2">{currentStreak}</p>
+          <p className="text-slate-400 text-sm">days</p>
         </div>
-        <p className="text-5xl font-bold text-orange-400 mt-2">{currentStreak}</p>
-        <p className="text-slate-400 text-sm">days</p>
-      </div>
-      <div className="bg-slate-800 rounded-xl p-4 shadow-lg flex flex-col items-center justify-center">
-        <div className="flex items-center">
-          <TrophyIcon />
-          <h2 className="text-lg font-semibold text-slate-300">Longest Streak</h2>
+        <div className="bg-slate-800 rounded-xl p-4 shadow-lg flex flex-col items-center justify-center">
+          <div className="flex items-center">
+            <TrophyIcon />
+            <h2 className="text-lg font-semibold text-slate-300">Longest Streak</h2>
+          </div>
+          <p className="text-5xl font-bold text-yellow-400 mt-2">{longestStreak}</p>
+          <p className="text-slate-400 text-sm">days</p>
         </div>
-        <p className="text-5xl font-bold text-yellow-400 mt-2">{longestStreak}</p>
-        <p className="text-slate-400 text-sm">days</p>
       </div>
-    </div>
+
+      <div className="mt-4 bg-slate-800 rounded-xl p-4 shadow-lg">
+        {isEditing ? (
+          <div>
+            <label htmlFor="streak-goal" className="block text-sm font-medium text-slate-300 mb-2">Set Streak Goal (in days)</label>
+            <input 
+              type="number" 
+              id="streak-goal"
+              value={goalValue}
+              onChange={(e) => setGoalValue(e.target.value)}
+              className="w-full bg-slate-700 border-slate-600 text-slate-200 rounded-md p-2 focus:ring-emerald-500 focus:border-emerald-500"
+              placeholder="e.g., 30"
+              min="1"
+              autoFocus
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={handleCancel} className="px-4 py-2 text-sm bg-slate-600 text-slate-200 font-semibold rounded-lg hover:bg-slate-700 transition-colors">Cancel</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors">Save Goal</button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-300">Streak Goal</h2>
+              {streakGoal > 0 ? (
+                isGoalMet ? (
+                   <p className="text-emerald-400 font-bold mt-1 text-sm">Goal Achieved! 🎉 Keep it up!</p>
+                ) : (
+                  <p className="text-slate-400 text-sm mt-1">{currentStreak} of {streakGoal} days</p>
+                )
+              ) : (
+                <p className="text-slate-400 text-sm mt-1">No goal set.</p>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              {streakGoal > 0 && !isGoalMet && (
+                  <div className="w-24">
+                      <div className="bg-slate-700 rounded-full h-2.5">
+                          <div className="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                      </div>
+                  </div>
+              )}
+              <button 
+                onClick={() => setIsEditing(true)} 
+                className="text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold py-1 px-3 rounded-md transition-colors"
+                aria-label="Edit streak goal"
+              >
+                {streakGoal > 0 ? 'Edit' : 'Set Goal'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };

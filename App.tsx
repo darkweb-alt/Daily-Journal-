@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useHabitData } from './hooks/useHabitData';
 import { Header } from './components/Header';
@@ -10,7 +9,7 @@ import { HabitEntry } from './types';
 type View = 'log' | 'history';
 
 const App: React.FC = () => {
-  const { entries, addEntry, currentStreak, longestStreak, streakHistory } = useHabitData();
+  const { entries, addEntry, currentStreak, longestStreak, streakHistory, streakGoal, setStreakGoal, isGoalMet } = useHabitData();
   const [view, setView] = useState<View>('log');
 
   const handleAddEntry = (newEntry: Omit<HabitEntry, 'date'> & { date: Date }) => {
@@ -28,7 +27,13 @@ const App: React.FC = () => {
       <div className="w-full max-w-md mx-auto">
         <Header />
         <main className="mt-6">
-          <StreakDisplay currentStreak={currentStreak} longestStreak={longestStreak} />
+          <StreakDisplay 
+            currentStreak={currentStreak} 
+            longestStreak={longestStreak} 
+            streakGoal={streakGoal}
+            setStreakGoal={setStreakGoal}
+            isGoalMet={isGoalMet}
+          />
           
           <div className="mt-8 bg-slate-800 rounded-xl shadow-lg p-2 flex space-x-2">
             <button 
